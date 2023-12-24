@@ -164,7 +164,7 @@ while ret:
                 cv2.line(frame, points[i][j][k - 1], points[i][j][k], colors[i], 2)
                 cv2.line(paintWindow, points[i][j][k - 1], points[i][j][k], colors[i], 2)
 
-    # camera output stopped
+# camera output stopped
 #cv2.imshow("Output", frame)
     cv2.imshow("Paint", paintWindow)
 
