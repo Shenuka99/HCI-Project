@@ -9,7 +9,7 @@ mpDraw = mp.solutions.drawing_utils
 
 cap = cv2.VideoCapture(0)
 ret = True
-
+#paint
 paintWindow = np.zeros((1000, 1500, 3), dtype=np.uint8) + 255
 
 drawing_color = (0, 0, 0)  # Black by default
