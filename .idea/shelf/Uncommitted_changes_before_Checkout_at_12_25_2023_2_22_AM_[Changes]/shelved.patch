@@ -1,0 +1,93 @@
+Index: main.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># All the imports go here\r\nimport cv2\r\nimport numpy as np\r\nimport mediapipe as mp\r\nfrom collections import deque\r\n\r\n\r\n# Giving different arrays to handle colour points of different colour\r\nbpoints = [deque(maxlen=1024)]\r\ngpoints = [deque(maxlen=1024)]\r\nrpoints = [deque(maxlen=1024)]\r\nypoints = [deque(maxlen=1024)]\r\n\r\n\r\n# These indexes will be used to mark the points in particular arrays of specific colour\r\nblue_index = 0\r\ngreen_index = 0\r\nred_index = 0\r\nyellow_index = 0\r\n\r\n#The kernel to be used for dilation purpose\r\nkernel = np.ones((5,5),np.uint8)\r\n\r\ncolors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255)]\r\ncolorIndex = 0\r\n\r\n# Here is code for Canvas setup\r\n#Made canvas larger\r\npaintWindow = np.zeros((690, 1000, 3)) + 255\r\n\r\npaintWindow = cv2.rectangle(paintWindow, (40,1), (140,65), (0,0,0), 2)\r\npaintWindow = cv2.rectangle(paintWindow, (160,1), (255,65), (255,0,0), 2)\r\npaintWindow = cv2.rectangle(paintWindow, (275,1), (370,65), (0,255,0), 2)\r\npaintWindow = cv2.rectangle(paintWindow, (390,1), (485,65), (0,0,255), 2)\r\npaintWindow = cv2.rectangle(paintWindow, (505,1), (600,65), (0,255,255), 2)\r\n\r\ncv2.putText(paintWindow, \"CLEAR\", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\ncv2.putText(paintWindow, \"BLUE\", (185, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\ncv2.putText(paintWindow, \"GREEN\", (298, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\ncv2.putText(paintWindow, \"RED\", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\ncv2.putText(paintWindow, \"YELLOW\", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\ncv2.namedWindow('Paint', cv2.WINDOW_AUTOSIZE)\r\n\r\n\r\n# initialize mediapipe\r\nmpHands = mp.solutions.hands\r\nhands = mpHands.Hands(max_num_hands=1, min_detection_confidence=0.7)\r\nmpDraw = mp.solutions.drawing_utils\r\n\r\n\r\n# Initialize the webcam\r\ncap = cv2.VideoCapture(0)\r\nret = True\r\nwhile ret:\r\n    # Read each frame from the webcam\r\n    ret, frame = cap.read()\r\n\r\n    x, y, c = frame.shape\r\n\r\n    # Flip the frame vertically\r\n    frame = cv2.flip(frame, 1)\r\n    #hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)\r\n    framergb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)\r\n\r\n    frame = cv2.rectangle(frame, (40,1), (140,65), (0,0,0), 2)\r\n    frame = cv2.rectangle(frame, (160,1), (255,65), (255,0,0), 2)\r\n    frame = cv2.rectangle(frame, (275,1), (370,65), (0,255,0), 2)\r\n    frame = cv2.rectangle(frame, (390,1), (485,65), (0,0,255), 2)\r\n    frame = cv2.rectangle(frame, (505,1), (600,65), (0,255,255), 2)\r\n    cv2.putText(frame, \"CLEAR\", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\n    cv2.putText(frame, \"BLUE\", (185, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\n    cv2.putText(frame, \"GREEN\", (298, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\n    cv2.putText(frame, \"RED\", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\n    cv2.putText(frame, \"YELLOW\", (520, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)\r\n    #frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)\r\n\r\n    # Get hand landmark prediction\r\n    result = hands.process(framergb)\r\n\r\n    # post process the result\r\n    if result.multi_hand_landmarks:\r\n        landmarks = []\r\n        for handslms in result.multi_hand_landmarks:\r\n            for lm in handslms.landmark:\r\n                # # print(id, lm)\r\n                # print(lm.x)\r\n                # print(lm.y)\r\n                lmx = int(lm.x * 640)\r\n                lmy = int(lm.y * 480)\r\n\r\n                landmarks.append([lmx, lmy])\r\n\r\n\r\n            # Drawing landmarks on frames\r\n            mpDraw.draw_landmarks(frame, handslms, mpHands.HAND_CONNECTIONS)\r\n        fore_finger = (landmarks[8][0],landmarks[8][1])\r\n        center = fore_finger\r\n        thumb = (landmarks[4][0],landmarks[4][1])\r\n        cv2.circle(frame, center, 3, (0,255,0),-1)\r\n        print(center[1]-thumb[1])\r\n        if (thumb[1]-center[1]<30):\r\n            bpoints.append(deque(maxlen=512))\r\n            blue_index += 1\r\n            gpoints.append(deque(maxlen=512))\r\n            green_index += 1\r\n            rpoints.append(deque(maxlen=512))\r\n            red_index += 1\r\n            ypoints.append(deque(maxlen=512))\r\n            yellow_index += 1\r\n\r\n        elif center[1] <= 65:\r\n            if 40 <= center[0] <= 140: # Clear Button\r\n                bpoints = [deque(maxlen=512)]\r\n                gpoints = [deque(maxlen=512)]\r\n                rpoints = [deque(maxlen=512)]\r\n                ypoints = [deque(maxlen=512)]\r\n\r\n                blue_index = 0\r\n                green_index = 0\r\n                red_index = 0\r\n                yellow_index = 0\r\n\r\n                paintWindow[67:,:,:] = 255\r\n            elif 160 <= center[0] <= 255:\r\n                    colorIndex = 0 # Blue\r\n            elif 275 <= center[0] <= 370:\r\n                    colorIndex = 1 # Green\r\n            elif 390 <= center[0] <= 485:\r\n                    colorIndex = 2 # Red\r\n            elif 505 <= center[0] <= 600:\r\n                    colorIndex = 3 # Yellow\r\n        else :\r\n            if colorIndex == 0:\r\n                bpoints[blue_index].appendleft(center)\r\n            elif colorIndex == 1:\r\n                gpoints[green_index].appendleft(center)\r\n            elif colorIndex == 2:\r\n                rpoints[red_index].appendleft(center)\r\n            elif colorIndex == 3:\r\n                ypoints[yellow_index].appendleft(center)\r\n    # Append the next deques when nothing is detected to avois messing up\r\n    else:\r\n        bpoints.append(deque(maxlen=512))\r\n        blue_index += 1\r\n        gpoints.append(deque(maxlen=512))\r\n        green_index += 1\r\n        rpoints.append(deque(maxlen=512))\r\n        red_index += 1\r\n        ypoints.append(deque(maxlen=512))\r\n        yellow_index += 1\r\n\r\n    # Draw lines of all the colors on the canvas and frame\r\n    points = [bpoints, gpoints, rpoints, ypoints]\r\n    # for j in range(len(points[0])):\r\n    #         for k in range(1, len(points[0][j])):\r\n    #             if points[0][j][k - 1] is None or points[0][j][k] is None:\r\n    #                 continue\r\n    #             cv2.line(paintWindow, points[0][j][k - 1], points[0][j][k], colors[0], 2)\r\n    for i in range(len(points)):\r\n        for j in range(len(points[i])):\r\n            for k in range(1, len(points[i][j])):\r\n                if points[i][j][k - 1] is None or points[i][j][k] is None:\r\n                    continue\r\n                cv2.line(frame, points[i][j][k - 1], points[i][j][k], colors[i], 2)\r\n                cv2.line(paintWindow, points[i][j][k - 1], points[i][j][k], colors[i], 2)\r\n\r\n# camera output stopped\r\n#cv2.imshow(\"Output\", frame)\r\n    cv2.imshow(\"Paint\", paintWindow)\r\n\r\n    if cv2.waitKey(1) == ord('q'):\r\n        break\r\n\r\n# release the webcam and destroy all active windows\r\ncap.release()\r\ncv2.destroyAllWindows()\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main.py b/main.py
+--- a/main.py	
++++ b/main.py	
+@@ -27,14 +27,14 @@
+ # Here is code for Canvas setup
+ #Made canvas larger
+ paintWindow = np.zeros((690, 1000, 3)) + 255
+-
+-paintWindow = cv2.rectangle(paintWindow, (40,1), (140,65), (0,0,0), 2)
++#CLEAR button removed
++#paintWindow = cv2.rectangle(paintWindow, (40,1), (140,65), (0,0,0), 2)
+ paintWindow = cv2.rectangle(paintWindow, (160,1), (255,65), (255,0,0), 2)
+ paintWindow = cv2.rectangle(paintWindow, (275,1), (370,65), (0,255,0), 2)
+ paintWindow = cv2.rectangle(paintWindow, (390,1), (485,65), (0,0,255), 2)
+ paintWindow = cv2.rectangle(paintWindow, (505,1), (600,65), (0,255,255), 2)
+ 
+-cv2.putText(paintWindow, "CLEAR", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
++#cv2.putText(paintWindow, "CLEAR", (49, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+ cv2.putText(paintWindow, "BLUE", (185, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+ cv2.putText(paintWindow, "GREEN", (298, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+ cv2.putText(paintWindow, "RED", (420, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+@@ -51,6 +51,19 @@
+ # Initialize the webcam
+ cap = cv2.VideoCapture(0)
+ ret = True
++
++
++def all_fingers_up(hand_landmarks):
++    # Check if all fingers are up based on Y-coordinate of finger tips
++    if (hand_landmarks.landmark[4].y > hand_landmarks.landmark[3].y and
++            hand_landmarks.landmark[8].y > hand_landmarks.landmark[7].y and
++            hand_landmarks.landmark[12].y > hand_landmarks.landmark[11].y and
++            hand_landmarks.landmark[16].y > hand_landmarks.landmark[15].y and
++            hand_landmarks.landmark[20].y > hand_landmarks.landmark[19].y):
++        return True
++    else:
++        return False
++
+ while ret:
+     # Read each frame from the webcam
+     ret, frame = cap.read()
+@@ -61,6 +74,8 @@
+     frame = cv2.flip(frame, 1)
+     #hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+     framergb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
++    result = hands.process(framergb)
++    hand_landmarks = result.multi_hand_landmarks[0] if result.multi_hand_landmarks else None
+ 
+     frame = cv2.rectangle(frame, (40,1), (140,65), (0,0,0), 2)
+     frame = cv2.rectangle(frame, (160,1), (255,65), (255,0,0), 2)
+@@ -77,6 +92,9 @@
+     # Get hand landmark prediction
+     result = hands.process(framergb)
+ 
++
++
++
+     # post process the result
+     if result.multi_hand_landmarks:
+         landmarks = []
+@@ -109,7 +127,7 @@
+             yellow_index += 1
+ 
+         elif center[1] <= 65:
+-            if 40 <= center[0] <= 140: # Clear Button
++            if center[1] <= 65 and all_fingers_up(hand_landmarks): # Clear Button
+                 bpoints = [deque(maxlen=512)]
+                 gpoints = [deque(maxlen=512)]
+                 rpoints = [deque(maxlen=512)]
+@@ -164,8 +182,7 @@
+                 cv2.line(frame, points[i][j][k - 1], points[i][j][k], colors[i], 2)
+                 cv2.line(paintWindow, points[i][j][k - 1], points[i][j][k], colors[i], 2)
+ 
+-# camera output stopped
+-#cv2.imshow("Output", frame)
++    cv2.imshow("Output", frame)
+     cv2.imshow("Paint", paintWindow)
+ 
+     if cv2.waitKey(1) == ord('q'):
+@@ -173,4 +190,4 @@
+ 
+ # release the webcam and destroy all active windows
+ cap.release()
+-cv2.destroyAllWindows()
++cv2.destroyAllWindows()
+\ No newline at end of file
