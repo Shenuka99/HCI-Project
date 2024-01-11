@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Camera and Whiteboard</title>
+  </head>
+  <body>
+    <button id="startButton">Start Camera and Whiteboard</button>
+
+    <script>
+      // Function to send a request to start the camera and whiteboard
+      async function startCameraAndWhiteboard() {
+        // Send an HTTP request to the Flask server
+        const response = await fetch("/start_camera_and_whiteboard", {
+          method: "POST",
+        });
+
+        // Handle the response if needed
+        const result = await response.json();
+        console.log(result);
+      }
+
+      // Attach a click event listener to the button
+      document
+        .getElementById("startButton")
+        .addEventListener("click", startCameraAndWhiteboard);
+    </script>
+  </body>
+</html>
