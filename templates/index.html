@@ -2,30 +2,43 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Camera and Whiteboard</title>
+    <title>Hand Tracking App</title>
+    <script src="https://cdn.socket.io/3.0.3/socket.io.js"></script>
   </head>
   <body>
-    <button id="startButton">Start Camera and Whiteboard</button>
-
     <script>
-      // Function to send a request to start the camera and whiteboard
-      async function startCameraAndWhiteboard() {
-        // Send an HTTP request to the Flask server
-        const response = await fetch("/start_camera_and_whiteboard", {
-          method: "POST",
+      var socket = io.connect(
+        "http://" + document.domain + ":" + location.port
+      );
+
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then(function (stream) {
+          var video = document.createElement("video");
+          document.body.appendChild(video);
+          video.srcObject = stream;
+          video.play();
+
+          var canvas = document.createElement("canvas");
+          document.body.appendChild(canvas);
+          var ctx = canvas.getContext("2d");
+
+          video.addEventListener("loadeddata", function () {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            setInterval(function () {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              var image = canvas.toDataURL("image/jpeg");
+              socket.emit("image", image);
+            }, 1000 / 30);
+          });
         });
 
-        // Handle the response if needed
-        const result = await response.json();
-        console.log(result);
-      }
-
-      // Attach a click event listener to the button
-      document
-        .getElementById("startButton")
-        .addEventListener("click", startCameraAndWhiteboard);
+      socket.on("hand_landmarks", function (landmarks) {
+        console.log(landmarks);
+        // Handle hand landmarks here
+      });
     </script>
   </body>
 </html>
